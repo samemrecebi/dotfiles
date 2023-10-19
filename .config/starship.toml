@@ -13,24 +13,9 @@ vimcmd_symbol = "[❮](green)"
 symbol = "  "
 format = '\[[$symbol($profile)(\($region\))(\[$duration\])]($style)\]'
 
-[bun]
-format = '\[[$symbol($version)]($style)\]'
-
 [c]
 symbol = " "
 format = '\[[$symbol($version(-$name))]($style)\]'
-
-[cmake]
-format = '\[[$symbol($version)]($style)\]'
-
-[deno]
-format = '\[[$symbol($version)]($style)\]'
-
-[docker_context]
-format = '\[[$symbol$context]($style)\]'
-
-[gcloud]
-format = '\[[$symbol$account(@$domain)(\($region\))]($style)\]'
 
 [git_branch]
 format = '\[[$symbol$branch]($style)\]'
@@ -38,21 +23,17 @@ format = '\[[$symbol$branch]($style)\]'
 [git_status]
 format = '([\[$all_status$ahead_behind\]]($style))'
 
-[memory_usage]
-format = '\[$symbol[$ram( | $swap)]($style)\]'
-
-[nix_shell]
-format = '\[[$symbol$state( \($name\))]($style)\]'
-
 [nodejs]
 format = '\[[$symbol($version)]($style)\]'
 
-[rust]
-format = '\[[$symbol($version)]($style)\]'
-
 [python]
-symbol = "Python "
+symbol = " "
+pyenv_version_name = true
 format = '\[[${symbol}${pyenv_prefix}(${version})(\($virtualenv\))]($style)\]'
+
+[package]
+symbol = " "
+format = '\[[$symbol$version]($style)\]'
 
 [os]
 format = '\[[$name]($style)\]'
@@ -73,22 +54,58 @@ disabled = false
 
 #Unused
 
-[julia]
+[bun]
 format = '\[[$symbol($version)]($style)\]'
 
-[kotlin]
+[cmake]
 format = '\[[$symbol($version)]($style)\]'
 
-[kubernetes]
-format = '\[[$symbol$context( \($namespace\))]($style)\]'
+[cmd_duration]
+format = '\[[⏱ $duration]($style)\]'
 
-[lua]
+[cobol]
 format = '\[[$symbol($version)]($style)\]'
 
-[meson]
-format = '\[[$symbol$project]($style)\]'
+[conda]
+format = '\[[$symbol$environment]($style)\]'
 
-[nim]
+[crystal]
+format = '\[[$symbol($version)]($style)\]'
+
+[daml]
+format = '\[[$symbol($version)]($style)\]'
+
+[dart]
+format = '\[[$symbol($version)]($style)\]'
+
+[deno]
+format = '\[[$symbol($version)]($style)\]'
+
+[docker_context]
+format = '\[[$symbol$context]($style)\]'
+
+[dotnet]
+format = '\[[$symbol($version)(🎯 $tfm)]($style)\]'
+
+[elixir]
+format = '\[[$symbol($version \(OTP $otp_version\))]($style)\]'
+
+[elm]
+format = '\[[$symbol($version)]($style)\]'
+
+[erlang]
+format = '\[[$symbol($version)]($style)\]'
+
+[fennel]
+format = '\[[$symbol($version)]($style)\]'
+
+[fossil_branch]
+format = '\[[$symbol$branch]($style)\]'
+
+[gcloud]
+format = '\[[$symbol$account(@$domain)(\($region\))]($style)\]'
+
+[golang]
 format = '\[[$symbol($version)]($style)\]'
 
 [gradle]
@@ -112,26 +129,29 @@ format = '\[[$symbol$branch]($style)\]'
 [java]
 format = '\[[$symbol($version)]($style)\]'
 
-[golang]
+[julia]
 format = '\[[$symbol($version)]($style)\]'
 
-[dotnet]
-format = '\[[$symbol($version)(🎯 $tfm)]($style)\]'
-
-[elixir]
-format = '\[[$symbol($version \(OTP $otp_version\))]($style)\]'
-
-[elm]
+[kotlin]
 format = '\[[$symbol($version)]($style)\]'
 
-[erlang]
+[kubernetes]
+format = '\[[$symbol$context( \($namespace\))]($style)\]'
+
+[lua]
 format = '\[[$symbol($version)]($style)\]'
 
-[fennel]
+[memory_usage]
+format = '\[$symbol[$ram( | $swap)]($style)\]'
+
+[meson]
+format = '\[[$symbol$project]($style)\]'
+
+[nim]
 format = '\[[$symbol($version)]($style)\]'
 
-[fossil_branch]
-format = '\[[$symbol$branch]($style)\]'
+[nix_shell]
+format = '\[[$symbol$state( \($name\))]($style)\]'
 
 [ocaml]
 format = '\[[$symbol($version)(\($switch_indicator$switch_name\))]($style)\]'
@@ -166,6 +186,9 @@ format = '\[[$symbol($version)]($style)\]'
 [ruby]
 format = '\[[$symbol($version)]($style)\]'
 
+[rust]
+format = '\[[$symbol($version)]($style)\]'
+
 [scala]
 format = '\[[$symbol($version)]($style)\]'
 
@@ -180,6 +203,9 @@ format = '\[[$symbol($version)]($style)\]'
 
 [terraform]
 format = '\[[$symbol$workspace]($style)\]'
+
+[time]
+format = '\[[$time]($style)\]'
 
 [vagrant]
 format = '\[[$symbol($version)]($style)\]'

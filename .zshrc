@@ -17,3 +17,5 @@ alias -s el=em
 alias -s org=em
 
 alias -g updatesys="brew update && brew upgrade"
+
+source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
