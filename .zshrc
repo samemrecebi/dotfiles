@@ -7,6 +7,7 @@ zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 
 alias em="emacsclient -c -n -a ''"
 
+alias r="radian"
 alias gaa="git add ."
 alias gcm="git commit -m "
 alias gp="git push"

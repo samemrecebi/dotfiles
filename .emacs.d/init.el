@@ -1,15 +1,18 @@
 ;;; init.el --- Load the full configuration -*- lexical-binding: t -*-
 ;;; Commentary:
 
-;; I have some idea what im doing.
+;; Uga Buga
 
 ;;; Code:
-;;Start speedup
-(setq gc-cons-threshold (* 100 1024 1024)
-      read-process-output-max (* 1024 1024)
-      create-lockfiles nil)
 
-;;UI fixes
+;;Start speedup
+(let ((normal-gc-cons-threshold (* 20 1024 1024))
+      (init-gc-cons-threshold (* 128 1024 1024)))
+  (setq gc-cons-threshold init-gc-cons-threshold)
+  (add-hook 'emacs-startup-hook
+            (lambda () (setq gc-cons-threshold normal-gc-cons-threshold))))
+
+;; UI fixes
 (menu-bar-mode -1)
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
@@ -17,16 +20,28 @@
 (set-fringe-mode 10)
 (setq ns-pop-up-frames nil)
 (setq inhibit-startup-message t)
+(setq use-short-answers t)
+(setq confirm-nonexistent-file-or-buffer nil)
+(setq kill-buffer-query-functions
+  (remq 'process-kill-buffer-query-function
+        kill-buffer-query-functions))
+(setq history-length 25)
+(savehist-mode 1)
 
-;;OS spesific settings
+
+;; Keys
+ (global-set-key (kbd "<escape>") 'keyboard-escape-quit )
+;; Mac spesific fixes
 (when (eq system-type 'darwin)
+  (setq native-comp-async-report-warnings-errors nil)
   (setq mac-right-option-modifier 'super)
-  (global-set-key (kbd "<escape>") 'keyboard-escape-quit ))
+  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
+  (add-to-list 'default-frame-alist '(ns-appearance . dark)))
 
 ;; Clean folder
 (setq make-backup-files nil)
 
-;; auto-save-mode doesn't create the path automatically!
+;; Auto-save-mode doesn't create the path automatically!
 (make-directory (expand-file-name "tmp/auto-saves/" user-emacs-directory) t)
 
 (setq auto-save-list-file-prefix (expand-file-name "tmp/auto-saves/sessions/" user-emacs-directory)
@@ -50,10 +65,6 @@
 		dashboard-mode-hookx))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-(add-hook 'org-mode-hook
-	  (lambda () (electric-pair-mode -1))
-	  (lambda () (electric-indent-local-mode -1)))
-
 ;;Package repos
 (require 'package)
 (add-to-list 'package-archives '("gnu"   . "https://elpa.gnu.org/packages/"))
@@ -61,7 +72,6 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
 (package-initialize)
-
 
 (when (not package-archive-contents)
   (package-refresh-contents))
@@ -111,9 +121,11 @@
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
+(setq doom-modeline-icon t)
 
 ;;all-the-icons
-(use-package all-the-icons)
+(use-package all-the-icons
+  :if (display-graphic-p))
 
 ;;ivy
 (use-package ivy
@@ -148,8 +160,19 @@
   :bind ("C-x g" . magit-status))
 
 ;;Flycheck
-(use-package flycheck)
-(add-hook 'after-init-hook #'global-flycheck-mode)
+(use-package flycheck
+  :init (global-flycheck-mode)
+  :config
+  (setq flycheck-display-errors-function
+	#'flycheck-display-error-messages-unless-error-list)
+
+  (setq flycheck-indication-mode nil))
+
+(use-package flycheck-pos-tip
+  :ensure t
+  :after flycheck
+  :config
+  (flycheck-pos-tip-mode))
 
 ;;Spellcheck
 (dolist (hook '(text-mode-hook))
@@ -171,50 +194,38 @@
   (flyspell-buffer))
 
 ;; Completion
-(use-package company)
-(add-hook 'after-init-hook 'global-company-mode)
-(setq company-backends '((company-capf company-dabbrev-code :with company-yasnippet)))
+(use-package company
+  :bind ("M-/" . company-complete-common-or-cycle) ;; overwritten by flyspell
+  :init (add-hook 'after-init-hook 'global-company-mode)
+  :config
+  (setq company-show-numbers            t
+	company-minimum-prefix-length   1
+	company-idle-delay              0.5
+	company-backends
+	'((company-files          ; files & directory
+	   company-keywords       ; keywords
+	   company-capf           ; what is this?
+	   company-yasnippet)
+	  (company-abbrev company-dabbrev))))
 
+(use-package company-box
+  :ensure t
+  :after company
+  :hook (company-mode . company-box-mode))
 ;; Some text modes
 (use-package markdown-mode)
 (use-package yaml-mode)
 (use-package json-mode)
 
-;; Pyhon Support
-(use-package elpy)
-(elpy-enable)
-(setq python-shell-completion-native-enable nil)
-
-(defvaralias 'flycheck-python-flake8-executable 'python-shell-interpreter)
-
-(when (require 'flycheck nil t)
-  (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-  (add-hook 'elpy-mode-hook 'flycheck-mode))
-
-;; LSP Mode
-(use-package lsp-mode
-  :init
-  (setq lsp-keymap-prefix "C-c l")
-  :hook ((python-mode . lsp)
-         (lsp-mode . lsp-enable-which-key-integration))
-  :commands lsp)
-
-;; optionally
-(use-package lsp-ui :commands lsp-ui-mode)
-(use-package lsp-ivy :commands lsp-ivy-workspace-symbol)
-
 (use-package which-key
     :config
     (which-key-mode))
 
-;; Latex Integration
-(use-package tex
-  :ensure auctex)
-(setq TeX-PDF-mode t)
-
-(setq TeX-auto-save t)
-(setq TeX-parse-self t)
-(setq-default TeX-master nil)
+;; Python
+(use-package python-mode
+  :ensure nil
+  :custom
+  (python-shell-interpreter "python"))
 
 ;; Org Mode
 (defun company-org-mode-hook ()
@@ -229,7 +240,13 @@
   (org-mode-hook . my-org-mode-hook)
   (org-mode-hook . company-org-mode-hook)
   :config
-  (customize-set-variable 'org-babel-python-command "python3")
+  (setq-default org-startup-indented t
+              org-pretty-entities t
+              org-use-sub-superscripts "{}"
+              org-hide-emphasis-markers t
+              org-startup-with-inline-images t
+              org-image-actual-width '(300))
+  (setq org-directory (concat (getenv "HOME") "/Documents/Notes/"))
   (custom-set-faces
    '(org-level-1 ((t (:inherit outline-1 :height 2.0))))
    '(org-level-2 ((t (:inherit outline-2 :height 1.5))))
@@ -239,18 +256,38 @@
    '(org-document-title ((t (:inherit default :height 2.0)))))
   (advice-add 'org-refile :after 'org-save-all-org-buffers))
 
-(setq org-directory (concat (getenv "HOME") "/Documents/Notes/"))
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((python . t)
-   (shell . t)
-   (matlab . t)))
-
+;; Org image drag and drop
 (use-package org-download)
 (add-hook 'dired-mode-hook 'org-download-enable)
-(setq org-download-screenshot-method "screencapture")
 
+;; Org distraction free writing
+(use-package olivetti)
+
+;; Org mode enphasis hider
+(use-package org-appear
+  :hook
+  (org-mode . org-appear-mode))
+
+;; Org bullets
+(use-package org-bullets
+  :after org
+  :hook
+  (org-mode . (lambda () (org-bullets-mode 1))))
+
+;; Better Inline LaTeX on Org
+(use-package org-fragtog
+  :after org
+  :custom
+  (org-startup-with-latex-preview t)
+  :hook
+  (org-mode . org-fragtog-mode)
+  :custom
+  (org-format-latex-options
+   (plist-put org-format-latex-options :scale 2)
+   (plist-put org-format-latex-options :foreground 'auto)
+   (plist-put org-format-latex-options :background 'auto)))
+
+;; Roam reseach
 (use-package org-roam
   :after org
   :init (setq org-roam-v2-ack t) ;; Acknowledge V2 upgrade
@@ -267,18 +304,4 @@
                 ("C-c n t" . org-roam-tag-add)
                 ("C-c n a" . org-roam-alias-add)
                 ("C-c n l" . org-roam-buffer-toggle)))))
-
-;; Org bullets
-(use-package org-bullets
-  :after org
-  :hook
-  (org-mode . (lambda () (org-bullets-mode 1))))
-
-;; Org Export
-(use-package ox-html
-  :ensure nil
-  :defer 3
-  :after org
-  :custom
-  (org-html-checkbox-type 'unicode))
 ;;; init.el ends here
