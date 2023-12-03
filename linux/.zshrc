@@ -1,5 +1,19 @@
 eval "$(starship init zsh)"
 
+case `uname` in
+  Darwin)
+    alias -g updatesys="brew update && brew upgrade"
+    source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+  ;;
+  Linux)
+    HISTFILE=~/.zsh_history
+    HISTSIZE=10000
+    SAVEHIST=10000
+    setopt appendhistory
+  ;;
+esac
+
+
 export TERM=alacritty
 
 autoload -Uz compinit && compinit
@@ -16,7 +30,3 @@ alias gpf!="git push --force"
 alias -s txt=em
 alias -s el=em
 alias -s org=em
-
-alias -g updatesys="brew update && brew upgrade"
-
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
