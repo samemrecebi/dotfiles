@@ -1,0 +1,15 @@
+[user]
+	name = Emre Cebi
+	email = emre@cebi.io
+	signingkey = /Users/emrecebi/.ssh/id_sign.pub
+[core]
+	autocrlf = input
+[init]
+	defaultBranch = main
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[gpg]
+	format = ssh
