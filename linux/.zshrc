@@ -30,3 +30,7 @@ alias gpf!="git push --force"
 alias -s txt=em
 alias -s el=em
 alias -s org=em
+
+export PYENV_ROOT="$HOME/.pyenv"
+[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
