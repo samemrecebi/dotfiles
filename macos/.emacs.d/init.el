@@ -30,7 +30,7 @@
 
 
 ;; Keys
- (global-set-key (kbd "<escape>") 'keyboard-escape-quit )
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit )
 ;; Mac spesific fixes
 (when (eq system-type 'darwin)
   (setq native-comp-async-report-warnings-errors nil)
@@ -69,7 +69,6 @@
 (require 'package)
 (add-to-list 'package-archives '("gnu"   . "https://elpa.gnu.org/packages/"))
 (add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
 (package-initialize)
 
