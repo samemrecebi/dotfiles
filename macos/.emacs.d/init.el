@@ -207,15 +207,6 @@
 	   company-yasnippet)
 	  (company-abbrev company-dabbrev))))
 
-(use-package company-box
-  :ensure t
-  :after company
-  :hook (company-mode . company-box-mode))
-;; Some text modes
-(use-package markdown-mode)
-(use-package yaml-mode)
-(use-package json-mode)
-
 (use-package which-key
     :config
     (which-key-mode))
