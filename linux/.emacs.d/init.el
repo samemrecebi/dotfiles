@@ -6,6 +6,8 @@
 ;;; Code:
 
 ;;Start speedup
+(server-start)
+
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
       (init-gc-cons-threshold (* 128 1024 1024)))
   (setq gc-cons-threshold init-gc-cons-threshold)
@@ -30,13 +32,7 @@
 
 
 ;; Keys
- (global-set-key (kbd "<escape>") 'keyboard-escape-quit )
-;; Mac spesific fixes
-(when (eq system-type 'darwin)
-  (setq native-comp-async-report-warnings-errors nil)
-  (setq mac-right-option-modifier 'super)
-  (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
-  (add-to-list 'default-frame-alist '(ns-appearance . dark)))
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
 ;; Clean folder
 (setq make-backup-files nil)
@@ -61,16 +57,15 @@
 (dolist (mode '(org-mode-hook
 		term-mode-hook
 		shell-mode-hook
-		eshell-mode-hook
-		dashboard-mode-hookx))
+		eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 ;;Package repos
 (require 'package)
-(add-to-list 'package-archives '("gnu"   . "https://elpa.gnu.org/packages/"))
-(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/"))
+(add-to-list 'package-archives '("gnu"   . "https://elpa.gnu.org/packages/") t)
+(add-to-list 'package-archives '("nongnu" . "https://elpa.nongnu.org/nongnu/") t)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/"))
+(add-to-list 'package-archives '("org" . "https://orgmode.org/elpa/") t)
 (package-initialize)
 
 (when (not package-archive-contents)
@@ -80,6 +75,7 @@
   (package-install 'use-package))
 
 (require 'use-package-ensure)
+(setq package-native-compile t)
 (setq use-package-always-ensure t)
 
 ;;Loading custom files
@@ -90,23 +86,6 @@
 (load custom-file 'noerror)
 
 ;;Packages
-;; Get Shell Variables
-(use-package exec-path-from-shell)
-(when (memq window-system '(mac ns x))
-  (exec-path-from-shell-initialize))
-
-(use-package yasnippet)
-(yas-minor-mode)
-(use-package yasnippet-snippets)
-
-;; Projectile
-(use-package projectile
-  :init (projectile-mode +1)
-  :config
-  (setq projectile-project-search-path '("~/Documents/Projects"))
-  :bind
-  ("s-p" . projectile-command-map))
-
 ;;doom-themes
 (use-package doom-themes
   :config
@@ -117,7 +96,6 @@
   (doom-themes-neotree-config)
   (doom-themes-treemacs-config)
   (doom-themes-org-config))
-
 
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
@@ -138,6 +116,9 @@
   :defer t
   :after hydra)
 
+(use-package counsel
+  :bind (("M-x" . counsel-M-x)))
+
 (global-set-key (kbd "C-s") 'swiper-isearch)
 (global-set-key (kbd "C-x C-f") 'counsel-find-file)
 (global-set-key (kbd "M-y") 'counsel-yank-pop)
@@ -152,9 +133,6 @@
 (global-set-key (kbd "C-c V") 'ivy-pop-view)
 (global-set-key (kbd "C-c t") 'counsel-org-tag)
 
-(use-package counsel
-  :bind (("M-x" . counsel-M-x)))
-
 ;;Magit
 (use-package magit
   :bind ("C-x g" . magit-status))
@@ -165,7 +143,6 @@
   :config
   (setq flycheck-display-errors-function
 	#'flycheck-display-error-messages-unless-error-list)
-
   (setq flycheck-indication-mode nil))
 
 (use-package flycheck-pos-tip
@@ -212,6 +189,7 @@
   :ensure t
   :after company
   :hook (company-mode . company-box-mode))
+
 ;; Some text modes
 (use-package markdown-mode)
 (use-package yaml-mode)
@@ -221,87 +199,34 @@
     :config
     (which-key-mode))
 
-;; Python
-(use-package python-mode
-  :ensure nil
-  :custom
-  (python-shell-interpreter "python"))
+;; LaTeX
+(use-package auctex)
+(use-package cdlatex)
+(use-package pdf-tools)
+(pdf-tools-install)
+
+(setq TeX-auto-save t)
+(setq TeX-parse-self t)
+(setq-default TeX-master nil)
+
+;; Use pdf-tools to open PDF files
+(setq TeX-view-program-selection '((output-pdf "PDF Tools"))
+      TeX-source-correlate-start-server t)
+
+;; Update PDF buffers after successful LaTeX runs
+(add-hook 'TeX-after-compilation-finished-functions
+          #'TeX-revert-document-buffer)
 
 ;; Org Mode
-(defun company-org-mode-hook ()
-  (setq-local company-backends
-	      '((company-dabbrev company-ispell company-yasnippet :separate)
-                company-files)))
-
 (use-package org
   :hook
   (org-mode . visual-line-mode)
   (org-mode-hook . auto-revert-mod)
-  (org-mode-hook . my-org-mode-hook)
-  (org-mode-hook . company-org-mode-hook)
   :config
   (setq-default org-startup-indented t
               org-pretty-entities t
               org-use-sub-superscripts "{}"
               org-hide-emphasis-markers t
               org-startup-with-inline-images t
-              org-image-actual-width '(300))
-  (setq org-directory (concat (getenv "HOME") "/Documents/Notes/"))
-  (custom-set-faces
-   '(org-level-1 ((t (:inherit outline-1 :height 2.0))))
-   '(org-level-2 ((t (:inherit outline-2 :height 1.5))))
-   '(org-level-3 ((t (:inherit outline-3 :height 1.2))))
-   '(org-level-4 ((t (:inherit outline-4 :height 1.0))))
-   '(org-level-5 ((t (:inherit outline-5 :height 1.0))))
-   '(org-document-title ((t (:inherit default :height 2.0)))))
-  (advice-add 'org-refile :after 'org-save-all-org-buffers))
-
-;; Org image drag and drop
-(use-package org-download)
-(add-hook 'dired-mode-hook 'org-download-enable)
-
-;; Org distraction free writing
-(use-package olivetti)
-
-;; Org mode enphasis hider
-(use-package org-appear
-  :hook
-  (org-mode . org-appear-mode))
-
-;; Org bullets
-(use-package org-bullets
-  :after org
-  :hook
-  (org-mode . (lambda () (org-bullets-mode 1))))
-
-;; Better Inline LaTeX on Org
-(use-package org-fragtog
-  :after org
-  :custom
-  (org-startup-with-latex-preview t)
-  :hook
-  (org-mode . org-fragtog-mode)
-  :custom
-  (org-format-latex-options
-   (plist-put org-format-latex-options :scale 2)
-   (plist-put org-format-latex-options :foreground 'auto)
-   (plist-put org-format-latex-options :background 'auto)))
-
-;; Roam reseach
-(use-package org-roam
-  :after org
-  :init (setq org-roam-v2-ack t) ;; Acknowledge V2 upgrade
-  :custom
-  (org-roam-directory (file-truename org-directory))
-  :config
-  (org-roam-setup)
-  :bind (("C-c n f" . org-roam-node-find)
-         ("C-c n r" . org-roam-node-random)
-	 ("C-c n d" . org-roam-dailies-capture-today)
-         (:map org-mode-map
-               (("C-c n i" . org-roam-node-insert)
-                ("C-c n o" . org-id-get-create)
-                ("C-c n t" . org-roam-tag-add)
-                ("C-c n a" . org-roam-alias-add)
-                ("C-c n l" . org-roam-buffer-toggle)))))
+              org-image-actual-width '(300)))
 ;;; init.el ends here
