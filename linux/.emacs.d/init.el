@@ -6,13 +6,20 @@
 ;;; Code:
 
 ;;Start speedup
-(server-start)
+(if (daemonp)
+    (message "Loading in the daemon!")
+  (message "Loading in regular Emacs!"))
 
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
       (init-gc-cons-threshold (* 128 1024 1024)))
   (setq gc-cons-threshold init-gc-cons-threshold)
+  (setq read-process-output-max (* 4 1024 1024))
+  (setq process-adaptive-read-buffering nil)
   (add-hook 'emacs-startup-hook
             (lambda () (setq gc-cons-threshold normal-gc-cons-threshold))))
+
+;; Stop native comp errors
+(setq warning-minimum-level :error)
 
 ;; UI fixes
 (menu-bar-mode -1)
@@ -25,16 +32,15 @@
 (setq use-short-answers t)
 (setq confirm-nonexistent-file-or-buffer nil)
 (setq kill-buffer-query-functions
-  (remq 'process-kill-buffer-query-function
-        kill-buffer-query-functions))
+      (remq 'process-kill-buffer-query-function
+            kill-buffer-query-functions))
 (setq history-length 25)
 (savehist-mode 1)
-
 
 ;; Keys
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
 
-;; Clean folder
+;; Mac spesific fixes
 (setq make-backup-files nil)
 
 ;; Auto-save-mode doesn't create the path automatically!
@@ -48,7 +54,12 @@
 (setq user-emacs-directory (expand-file-name "~/.cache/emacs"))
 
 ;;Font
-(set-face-attribute 'default nil :font "FiraCode Nerd Font Mono" :height 130)
+(set-face-attribute 'default nil :font "BerkeleyMono Nerd Font" :weight 'light :height 160)
+
+(custom-theme-set-faces
+ 'user
+ '(variable-pitch ((t (:family "Berkeley Mono Variable" :height 160 :weight medium))))
+ '(fixed-pitch ((t (:family "Berkeley Mono" :height 160)))))
 
 ;;Column number
 (column-number-mode)
@@ -59,6 +70,14 @@
 		shell-mode-hook
 		eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; Replace selected
+(delete-selection-mode)
+
+;; Better support for files with long lines
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq-default bidi-inhibit-bpa t)
+(global-so-long-mode 1)
 
 ;;Package repos
 (require 'package)
@@ -86,9 +105,15 @@
 (load custom-file 'noerror)
 
 ;;Packages
+;; Get Shell Variables
+(use-package exec-path-from-shell)
+(when (daemonp)
+  (exec-path-from-shell-initialize))
+
 ;;doom-themes
 (use-package doom-themes
   :config
+  (setq doom-modeline-icon t)
   (setq doom-themes-enable-bold t
         doom-themes-enable-italic t)
   (load-theme 'doom-city-lights t)
@@ -97,87 +122,170 @@
   (doom-themes-treemacs-config)
   (doom-themes-org-config))
 
+
 (use-package doom-modeline
   :init (doom-modeline-mode 1))
 (setq doom-modeline-icon t)
+
+;; Dashboard
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+(setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
 
 ;;all-the-icons
 (use-package all-the-icons
   :if (display-graphic-p))
 
-;;ivy
-(use-package ivy
-	:init (ivy-mode 1)
-	:custom
-	(setq ivy-use-virtual-buffers t
-				ivy-count-format "(%d/%d) "))
+;; Parantesis
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package ivy-hydra
-  :defer t
-  :after hydra)
+(electric-pair-mode 1)
+(setq electric-pair-pairs
+      '(
+	(?\" . ?\")
+	(?\' . ?\')
+	(?\{ . ?\})))
 
-(use-package counsel
-  :bind (("M-x" . counsel-M-x)))
+;; Vertigo
+(use-package vertico
+  :init
+  (vertico-mode))
 
-(global-set-key (kbd "C-s") 'swiper-isearch)
-(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-(global-set-key (kbd "M-y") 'counsel-yank-pop)
-(global-set-key (kbd "<f1> f") 'counsel-describe-function)
-(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-(global-set-key (kbd "<f1> l") 'counsel-find-library)
-(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-(global-set-key (kbd "<f2> j") 'counsel-set-variable)
-(global-set-key (kbd "C-x b") 'ivy-switch-buffer)
-(global-set-key (kbd "C-c v") 'ivy-push-view)
-(global-set-key (kbd "C-c V") 'ivy-pop-view)
-(global-set-key (kbd "C-c t") 'counsel-org-tag)
+(use-package consult
+  :bind (("C-x b" . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
+         ;; M-s bindings (search-map)
+         ("M-s r" . consult-ripgrep)
+         ("M-s f" . consult-find))
+  :init
+  (defun compat-string-width (&rest args)
+    (apply #'string-width args))
+  (setq
+   consult-ripgrep-args "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number --hidden ."
+   consult-find-args "find ."))
+
+(add-hook 'after-init-hook #'recentf-mode)
+(savehist-mode 1)
+(customize-set-variable 'bookmark-save-flag 1)
 
 ;;Magit
 (use-package magit
-  :bind ("C-x g" . magit-status))
+  :commands (magit-status magit-get-current-branch)
+  :custom
+  (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
 
-;;Flycheck
-(use-package flycheck
-  :init (global-flycheck-mode)
+;; Popper
+(use-package popper
+  :bind
+  (("C-`" . popper-toggle)
+   ("M-`" . popper-cycle)
+   ("C-M-`" . popper-toggle-type))
   :config
-  (setq flycheck-display-errors-function
-	#'flycheck-display-error-messages-unless-error-list)
-  (setq flycheck-indication-mode nil))
+  (setq popper--reference-names nil
+        popper--reference-modes nil
+        popper--reference-predicates nil)
+  (setq popper-reference-buffers
+        '("\\*Messages\\*"
+          "\\*Warnings\\*"
+	  "\\*Async Shell Command\\*"
+          "\\*Error\\*"
+          "Output\\*$"
+          "\\*HS-Error\\*"
+          "\\*lsp-help\\*"
+          "^\\*Ement compose.*\\*$"
+          "^\\*Org Export Dispatcher\\*$"
+          "^\\*Org Select\\*$"
+          "^\\*R:[^\\*]+\\*$"
+          compilation-mode))
+  (popper-mode +1)
+  (popper-echo-mode +1))
 
-(use-package flycheck-pos-tip
-  :ensure t
-  :after flycheck
+;; Treemacs
+(use-package treemacs
+  :after (doom-themes)
   :config
-  (flycheck-pos-tip-mode))
+  ;; read input from a minibuffer not a child frame.
+  (setq treemacs-read-string-input 'from-minibuffer))
 
-;;Spellcheck
-(dolist (hook '(text-mode-hook))
-  (add-hook hook (lambda () (flyspell-mode 1))))
+;; Tree siter
+(use-package tree-sitter)
+(global-tree-sitter-mode)
+(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode)
 
-(eval-after-load "flyspell"
-  '(progn
-     (define-key flyspell-mouse-map [down-mouse-3] #'flyspell-correct-word)
-     (define-key flyspell-mouse-map [mouse-3] #'undefined)))
+(setq treesit-language-source-alist
+      '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+	(cmake "https://github.com/uyha/tree-sitter-cmake")
+	(css "https://github.com/tree-sitter/tree-sitter-css")
+	(elisp "https://github.com/Wilfred/tree-sitter-elisp")
+	(go "https://github.com/tree-sitter/tree-sitter-go")
+	(html "https://github.com/tree-sitter/tree-sitter-html")
+	(javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+	(json "https://github.com/tree-sitter/tree-sitter-json")
+	(make "https://github.com/alemuller/tree-sitter-make")
+	(markdown "https://github.com/ikatyang/tree-sitter-markdown")
+	(python "https://github.com/tree-sitter/tree-sitter-python")
+	(toml "https://github.com/tree-sitter/tree-sitter-toml")
+	(tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+	(typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+	(yaml "https://github.com/ikatyang/tree-sitter-yaml")))
 
-(defun flyspell-turkish ()
-  (interactive)
-  (ispell-change-dictionary "turkish")
-  (flyspell-buffer))
+;; Code Modes
+(add-hook 'prog-mode-hook #'flymake-mode)
 
-(defun flyspell-english ()
-  (interactive)
-  (ispell-change-dictionary "default")
-  (flyspell-buffer))
+(use-package python-mode
+  :custom
+  (python-shell-interpreter "python3"))
+;; Some text modes
+(use-package markdown-mode
+  :hook
+  ((markdown-mode . visual-line-mode)
+   (markdown-mode . flyspell-mode))
+  :init
+  (setq markdown-command "multimarkdown"))
+(use-package yaml-mode)
+(use-package json-mode)
+(use-package nix-mode
+  :mode "\\.nix\\'")
+(use-package which-key
+  :init (which-key-mode)
+  :diminish which-key-mode
+  :config
+  (which-key-setup-side-window-right))
+
+;; LSP mode
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :hook
+  (python-mode . lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode))
+(setq lsp-ui-sideline-enable nil)
+(setq lsp-ui-sideline-show-hover nil)
+
+(use-package lsp-ivy)
+
+(use-package dap-mode)
 
 ;; Completion
 (use-package company
-  :bind ("M-/" . company-complete-common-or-cycle) ;; overwritten by flyspell
+  :bind (:map company-active-map
+              ("<tab>" . company-complete-selection))
+  (:map lsp-mode-map
+        ("<tab>" . company-indent-or-complete-common))
   :init (add-hook 'after-init-hook 'global-company-mode)
   :config
-  (setq company-show-numbers            t
+  (setq company-show-quick-access       t
 	company-minimum-prefix-length   1
-	company-idle-delay              0.5
+	company-idle-delay              0.0
 	company-backends
 	'((company-files          ; files & directory
 	   company-keywords       ; keywords
@@ -186,36 +294,8 @@
 	  (company-abbrev company-dabbrev))))
 
 (use-package company-box
-  :ensure t
   :after company
   :hook (company-mode . company-box-mode))
-
-;; Some text modes
-(use-package markdown-mode)
-(use-package yaml-mode)
-(use-package json-mode)
-
-(use-package which-key
-    :config
-    (which-key-mode))
-
-;; LaTeX
-(use-package auctex)
-(use-package cdlatex)
-(use-package pdf-tools)
-(pdf-tools-install)
-
-(setq TeX-auto-save t)
-(setq TeX-parse-self t)
-(setq-default TeX-master nil)
-
-;; Use pdf-tools to open PDF files
-(setq TeX-view-program-selection '((output-pdf "PDF Tools"))
-      TeX-source-correlate-start-server t)
-
-;; Update PDF buffers after successful LaTeX runs
-(add-hook 'TeX-after-compilation-finished-functions
-          #'TeX-revert-document-buffer)
 
 ;; Org Mode
 (use-package org
@@ -224,9 +304,9 @@
   (org-mode-hook . auto-revert-mod)
   :config
   (setq-default org-startup-indented t
-              org-pretty-entities t
-              org-use-sub-superscripts "{}"
-              org-hide-emphasis-markers t
-              org-startup-with-inline-images t
-              org-image-actual-width '(300)))
+		org-pretty-entities t
+		org-use-sub-superscripts "{}"
+		org-hide-emphasis-markers t
+		org-startup-with-inline-images t
+		org-image-actual-width '(300)))
 ;;; init.el ends here

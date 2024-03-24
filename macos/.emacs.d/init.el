@@ -54,7 +54,12 @@
 (setq user-emacs-directory (expand-file-name "~/.cache/emacs"))
 
 ;;Font
-(set-face-attribute 'default nil :font "FiraCode Nerd Font Mono" :height 130)
+(set-face-attribute 'default nil :font "BerkeleyMono Nerd Font" :weight 'light :height 160)
+
+(custom-theme-set-faces
+ 'user
+ '(variable-pitch ((t (:family "Berkeley Mono Variable" :height 160 :weight medium))))
+ '(fixed-pitch ((t (:family "Berkeley Mono" :height 160)))))
 
 ;;Column number
 (column-number-mode)
@@ -65,6 +70,14 @@
 		shell-mode-hook
 		eshell-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; Replace selected
+(delete-selection-mode)
+
+;; Better support for files with long lines
+(setq-default bidi-paragraph-direction 'left-to-right)
+(setq-default bidi-inhibit-bpa t)
+(global-so-long-mode 1)
 
 ;;Package repos
 (require 'package)
@@ -114,6 +127,13 @@
   :init (doom-modeline-mode 1))
 (setq doom-modeline-icon t)
 
+;; Dashboard
+(use-package dashboard
+  :ensure t
+  :config
+  (dashboard-setup-startup-hook))
+(setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
+
 ;;all-the-icons
 (use-package all-the-icons
   :if (display-graphic-p))
@@ -147,6 +167,10 @@
   (setq
    consult-ripgrep-args "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number --hidden ."
    consult-find-args "find ."))
+
+(add-hook 'after-init-hook #'recentf-mode)
+(savehist-mode 1)
+(customize-set-variable 'bookmark-save-flag 1)
 
 ;;Magit
 (use-package magit

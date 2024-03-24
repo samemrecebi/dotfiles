@@ -35,6 +35,9 @@ elpa/
 # AUCTeX auto folder
 auto/
 
+# Emacs history
+history/
+
 # cask packages
 .cask/
 dist/
