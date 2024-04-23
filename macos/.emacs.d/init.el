@@ -6,10 +6,14 @@
 ;;; Code:
 
 ;;Start speedup
-(if (daemonp)
-    (message "Loading in the daemon!")
-  (message "Loading in regular Emacs!"))
 
+;; Encoding
+(prefer-coding-system 'utf-8)
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+
+;; Speedup
 (let ((normal-gc-cons-threshold (* 20 1024 1024))
       (init-gc-cons-threshold (* 128 1024 1024)))
   (setq gc-cons-threshold init-gc-cons-threshold)
@@ -39,6 +43,7 @@
 
 ;; Keys
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-x k") 'kill-this-buffer)
 
 ;; Mac spesific fixes
 (setq make-backup-files nil)
@@ -68,7 +73,8 @@
 (dolist (mode '(org-mode-hook
 		term-mode-hook
 		shell-mode-hook
-		eshell-mode-hook))
+		eshell-mode-hook
+		dashboard-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
 ;; Replace selected
@@ -172,11 +178,24 @@
 (savehist-mode 1)
 (customize-set-variable 'bookmark-save-flag 1)
 
+;; Orderless
+  (use-package orderless
+    :config
+    (setq completion-styles '(orderless)))
+
 ;;Magit
 (use-package magit
   :commands (magit-status magit-get-current-branch)
   :custom
   (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1))
+
+;; Projectile
+(use-package projectile
+  :init
+  (projectile-mode +1)
+  :bind (:map projectile-mode-map
+              ("s-p" . projectile-command-map)
+              ("C-c p" . projectile-command-map)))
 
 ;; Popper
 (use-package popper
@@ -211,6 +230,14 @@
   ;; read input from a minibuffer not a child frame.
   (setq treemacs-read-string-input 'from-minibuffer))
 
+(use-package treemacs-projectile
+  :after (treemacs projectile)
+  :ensure t)
+
+(use-package treemacs-magit
+  :after (treemacs magit)
+  :ensure t)
+
 ;; Tree siter
 (use-package tree-sitter)
 (global-tree-sitter-mode)
@@ -238,7 +265,8 @@
 
 (use-package python-mode
   :custom
-  (python-shell-interpreter "python3"))
+  (python-shell-interpreter "python"))
+
 ;; Some text modes
 (use-package markdown-mode
   :hook
@@ -271,31 +299,52 @@
 (setq lsp-ui-sideline-enable nil)
 (setq lsp-ui-sideline-show-hover nil)
 
-(use-package lsp-ivy)
-
 (use-package dap-mode)
 
 ;; Completion
-(use-package company
-  :bind (:map company-active-map
-              ("<tab>" . company-complete-selection))
-  (:map lsp-mode-map
-        ("<tab>" . company-indent-or-complete-common))
-  :init (add-hook 'after-init-hook 'global-company-mode)
-  :config
-  (setq company-show-quick-access       t
-	company-minimum-prefix-length   1
-	company-idle-delay              0.0
-	company-backends
-	'((company-files          ; files & directory
-	   company-keywords       ; keywords
-	   company-capf           ; what is this?
-	   company-yasnippet)
-	  (company-abbrev company-dabbrev))))
+(use-package corfu
+  :custom
+  (corfu-cycle t)
+  (corfu-auto t)
+  :init
+  (global-corfu-mode))
 
-(use-package company-box
-  :after company
-  :hook (company-mode . company-box-mode))
+(use-package emacs
+  :init
+  (defun crm-indicator (args)
+    (cons (format "[CRM%s] %s"
+                  (replace-regexp-in-string
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                   crm-separator)
+                  (car args))
+          (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+  (setq enable-recursive-minibuffers t)
+  (setq read-extended-command-predicate #'command-completion-default-include-p)
+  (setq completion-cycle-threshold 3)
+  (setq tab-always-indent 'complete))
+
+(use-package cape
+  :after corfu
+  :init
+  (defun cape-setup-capf-prog ()
+    "Setup cape completions for prog-mode"
+    (cape-setup-capf))
+
+  (defun cape-setup-capf-text ()
+    "Setup cape completions for text-mode"
+    (cape-setup-capf))
+
+  (defun cape-setup-capf ()
+    "Setup cape completions"
+    (add-hook 'completion-at-point-functions #'cape-file)
+    (add-hook 'completion-at-point-functions #'cape-tex))
+  :hook
+  ((prog-mode . cape-setup-capf-prog)
+   (text-mode . cape-setup-capf-text)))
 
 ;; Org Mode
 (use-package org
@@ -303,10 +352,48 @@
   (org-mode . visual-line-mode)
   (org-mode-hook . auto-revert-mod)
   :config
+  (setq org-format-latex-options (plist-put org-format-latex-options :scale 2.0))
+  (setq org-latex-create-formula-image-program 'dvisvgm)
+  (setq org-src-fontify-natively t)
   (setq-default org-startup-indented t
 		org-pretty-entities t
 		org-use-sub-superscripts "{}"
 		org-hide-emphasis-markers t
+		 org-hide-leading-stars t
 		org-startup-with-inline-images t
 		org-image-actual-width '(300)))
+
+(use-package org-bullets :ensure t)
+(add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+
+(use-package org-fragtog)
+(add-hook 'org-mode-hook 'org-fragtog-mode)
+
+(require 'org-indent)
+
+;; Org Roam
+(use-package org-roam
+  :ensure t
+  :init
+  (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory "~/Documents/Notes")
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n i" . org-roam-node-insert))
+  :config
+  (org-roam-setup))
+
+;; PDF View
+(use-package pdf-tools
+  :pin manual ;; manually update
+  :config
+  ;; initialise
+  (pdf-tools-install)
+  ;; open pdfs scaled to fit width
+  (setq-default pdf-view-display-size 'fit-width)
+  ;; use normal isearch
+  (define-key pdf-view-mode-map (kbd "C-s") 'isearch-forward))
+
+
 ;;; init.el ends here
