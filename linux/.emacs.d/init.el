@@ -54,12 +54,12 @@
 (setq user-emacs-directory (expand-file-name "~/.cache/emacs"))
 
 ;;Font
-(set-face-attribute 'default nil :font "BerkeleyMono Nerd Font" :weight 'light :height 160)
+(set-face-attribute 'default nil :font "BerkeleyMono Nerd Font" :weight 'light :height 140)
 
-(custom-theme-set-faces
- 'user
- '(variable-pitch ((t (:family "Berkeley Mono Variable" :height 160 :weight medium))))
- '(fixed-pitch ((t (:family "Berkeley Mono" :height 160)))))
+;;(custom-theme-set-faces
+;; 'user
+;; '(variable-pitch ((t (:family "Berkeley Mono Variable" :height 160 :weight medium))))
+;; '(fixed-pitch ((t (:family "Berkeley Mono" :height 160)))))
 
 ;;Column number
 (column-number-mode)
@@ -110,6 +110,37 @@
 (when (daemonp)
   (exec-path-from-shell-initialize))
 
+;; Font Ligatures
+(use-package ligature
+  :config
+  (ligature-set-ligatures
+   'prog-mode
+   '(; Group A
+     ".." ".=" "..." "..<" "::" ":::" ":=" "::=" ";;" ";;;" "??" "???"
+     ".?" "?." ":?" "?:" "?=" "**" "***" "/*" "*/" "/**"
+     ; Group B
+     "<-" "->" "-<" ">-" "<--" "-->" "<<-" "->>" "-<<" ">>-" "<-<" ">->"
+     "<-|" "|->" "-|" "|-" "||-" "<!--" "<#--" "<=" "=>" ">=" "<==" "==>"
+     "<<=" "=>>" "=<<" ">>=" "<=<" ">=>" "<=|" "|=>" "<=>" "<==>" "||="
+     "|=" "//=" "/="
+     ; Group C
+     "<<" ">>" "<<<" ">>>" "<>" "<$" "$>" "<$>" "<+" "+>" "<+>" "<:" ":<"
+     "<:<" ">:" ":>" "<~" "~>" "<~>" "<<~" "<~~" "~~>" "~~" "<|" "|>"
+     "<|>" "<||" "||>" "<|||" "|||>" "</" "/>" "</>" "<*" "*>" "<*>" ":?>"
+     ; Group D
+     "#(" "#{" "#[" "]#" "#!" "#?" "#=" "#_" "#_(" "##" "###" "####"
+     ; Group E
+     "[|" "|]" "[<" ">]" "{!!" "!!}" "{|" "|}" "{{" "}}" "{{--" "--}}"
+     "{!--" "//" "///" "!!"
+     ; Group F
+     "www" "@_" "&&" "&&&" "&=" "~@" "++" "+++" "/\\" "\\/" "_|_" "||"
+     ; Group G
+     "=:" "=:=" "=!=" "==" "===" "=/=" "=~" "~-" "^=" "__" "!=" "!==" "-~"
+     "--" "---"))
+  ;; Enables ligature checks globally in all buffers. You can also do it
+  ;; per mode with `ligature-mode'.
+  (global-ligature-mode t))
+
 ;;doom-themes
 (use-package doom-themes
   :config
@@ -134,9 +165,14 @@
   (dashboard-setup-startup-hook))
 (setq initial-buffer-choice (lambda () (get-buffer-create "*dashboard*")))
 
-;;all-the-icons
-(use-package all-the-icons
-  :if (display-graphic-p))
+;; Nerd Icons
+(use-package nerd-icons
+  :custom
+  ;; The Nerd Font you want to use in GUI
+  ;; "Symbols Nerd Font Mono" is the default and is recommended
+  ;; but you can use any other Nerd Font if you want
+  (nerd-icons-font-family "Hack Nerd Font Mono")
+  )
 
 ;; Parantesis
 (use-package rainbow-delimiters

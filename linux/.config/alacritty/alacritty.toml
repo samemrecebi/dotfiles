@@ -21,7 +21,7 @@ TERM = "alacritty"
 size = 14.0
 
 [font.bold]
-family = "FiraCode Nerd Font Mono"
+family = "B612Mono Nerd Font"
 style = "Bold"
 
 [font.glyph_offset]
@@ -29,12 +29,12 @@ x = 0
 y = 0
 
 [font.italic]
-family = "FiraCode Nerd Font Mono"
+family = "B612Mono Nerd Font"
 style = "Italic"
 
 [font.normal]
-family = "FiraCode Nerd Font Mono"
-style = "Retina"
+family = "B612Mono Nerd Font"
+style = "Regular"
 
 [font.offset]
 x = 0
