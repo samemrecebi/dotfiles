@@ -14,27 +14,24 @@ unfocused_hollow = false
 [cursor.style]
 shape = "Block"
 
-[env]
-TERM = "alacritty"
-
 [font]
 size = 14.0
 
+[font.italic]
+family = "Hack Nerd Font"
+style = "Italic"
+
+[font.normal]
+family = "Hack Nerd Font"
+style = "Regular"
+
 [font.bold]
-family = "B612Mono Nerd Font"
+family = "Hack Nerd Font"
 style = "Bold"
 
 [font.glyph_offset]
 x = 0
 y = 0
-
-[font.italic]
-family = "B612Mono Nerd Font"
-style = "Italic"
-
-[font.normal]
-family = "B612Mono Nerd Font"
-style = "Regular"
 
 [font.offset]
 x = 0
