@@ -1,3 +1,6 @@
+# LOL I dont use this repo anymore
+I switched to home manager and Nix to manage my dotfiles and system so the dofiles have been moved there.
+
 # samemrecebi's dotfiles
 These configuration files are the ones that I use in my daily life on my Mac OS and NixOS machines.
 
